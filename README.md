@@ -1,2 +1,1 @@
-# duobrainy-hopscotch-with-hands
-игра Классики Руками
+# Hopscotch_Tel_Test_1
