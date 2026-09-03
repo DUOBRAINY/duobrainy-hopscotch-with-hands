@@ -3,11 +3,12 @@
   <head>
     <meta charset="utf-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <!-- 1. Название на вкладке браузера -->
     <title>Hopscotch with Hands - DuoBrainy.app</title>
     <link rel="shortcut icon" href="TemplateData/favicon.ico">
     <link rel="stylesheet" href="TemplateData/style.css">
     
-    <!-- Безопасная заглушка для Telegram SDK -->
+    <!-- Безопасная заглушка для предотвращения ошибок вызова Telegram SDK изнутри WebAssembly -->
     <script>
       window.Telegram = window.Telegram || {};
       window.Telegram.WebApp = window.Telegram.WebApp || {
@@ -31,6 +32,7 @@
       <div id="unity-warning"> </div>
       <div id="unity-footer">
         <div id="unity-fullscreen-button"></div>
+        <!-- 2. Название на веб-странице рядом с кнопкой фуллскрина -->
         <div id="unity-build-title">Hopscotch with Hands - DuoBrainy.app</div>
       </div>
     </div>
@@ -40,45 +42,11 @@
     </div>
 
     <style>
-      /* Убираем стандартные логотипы Unity */
+      /* Убираем стандартные логотипы Unity, зашитые в css-классах */
       #unity-logo, #unity-webgl-logo {
         display: none !important;
       }
-
-      /* Сбрасываем отступы и заставляем body занимать весь экран */
-      html, body {
-        width: 100%;
-        height: 100%;
-        margin: 0;
-        padding: 0;
-        overflow: hidden;
-        background: #000;
-      }
-
-      /* Растягиваем контейнер на весь экран браузера */
-      #unity-container {
-        width: 100% !important;
-        height: 100% !important;
-        position: absolute !important;
-        top: 0;
-        left: 0;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-      }
-
-      /* Холст адаптируется под размеры экрана */
-      #unity-canvas {
-        width: 100% !important;
-        height: 100% !important;
-        object-fit: contain;
-      }
-
-      /* Скрываем подвал с кнопками на мобильных */
-      .unity-mobile #unity-footer {
-        display: none !important;
-      }
-
+      
       #rotate-screen {
         display: none;
         position: fixed;
@@ -147,6 +115,7 @@
         codeUrl: buildUrl + "/Hopscotch_WebGL.wasm",
         streamingAssetsUrl: "StreamingAssets",
         companyName: "ZNOVANNA",
+        // 3. Внутреннее название продукта для движка Unity
         productName: "Hopscotch with Hands - DuoBrainy.app",
         productVersion: "1.0.2",
         showBanner: unityShowBanner,
@@ -160,6 +129,9 @@
         
         container.classList.add("unity-mobile");
         canvas.classList.add("unity-mobile");
+      } else {
+        canvas.style.width = "960px";
+        canvas.style.height = "600px";
       }
 
       canvas.style.background = "url('" + buildUrl + "/Hopscotch_WebGL.jpg') center / cover";
