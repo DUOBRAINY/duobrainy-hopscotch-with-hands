@@ -1,158 +1,777 @@
 <!DOCTYPE html>
+
 <html lang="en-us">
-  <head>
+<head>
     <meta charset="utf-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <!-- 1. Название на вкладке браузера -->
-    <title>Hopscotch with Hands - DuoBrainy.app</title>
-    <link rel="shortcut icon" href="TemplateData/favicon.ico">
-    <link rel="stylesheet" href="TemplateData/style.css">
-    
-    <!-- Безопасная заглушка для предотвращения ошибок вызова Telegram SDK изнутри WebAssembly -->
-    <script>
-      window.Telegram = window.Telegram || {};
-      window.Telegram.WebApp = window.Telegram.WebApp || {
-        ready: function() {},
-        requestFullscreen: function() {
-          console.log("Запрос Fullscreen перехвачен заглушкой браузера.");
+
+```
+<title>Hopscotch with Hands - DuoBrainy.app</title>
+
+<link rel="shortcut icon" href="TemplateData/favicon.ico">
+<link rel="stylesheet" href="TemplateData/style.css">
+
+<!--
+    Безопасная заглушка Telegram WebApp API.
+    Нужна, если Unity WebGL пытается обратиться к Telegram SDK,
+    когда игра запущена не внутри Telegram.
+-->
+<script>
+    window.Telegram = window.Telegram || {};
+    window.Telegram.WebApp = window.Telegram.WebApp || {
+        ready: function () {},
+        requestFullscreen: function () {
+            console.log("Telegram fullscreen unavailable.");
         },
-        isVersionAtLeast: function() { return false; },
+        isVersionAtLeast: function () {
+            return false;
+        },
         version: "0"
-      };
-    </script>
-  </head>
-  <body>
-    <div id="unity-container" class="unity-desktop">
-      <canvas id="unity-canvas" width="960" height="600" tabindex="-1"></canvas>
-      <div id="unity-loading-bar">
-        <div id="unity-progress-bar-empty">
-          <div id="unity-progress-bar-full"></div>
-        </div>
-      </div>
-      <div id="unity-warning"> </div>
-      <div id="unity-footer">
-        <div id="unity-fullscreen-button"></div>
-        <!-- 2. Название на веб-странице рядом с кнопкой фуллскрина -->
-        <div id="unity-build-title">Hopscotch with Hands - DuoBrainy.app</div>
-      </div>
-    </div>
+    };
+</script>
 
-    <div id="rotate-screen">
-      <img src="Restart.png" alt="Поверните устройство">
-    </div>
+<style>
+    /* =========================================================
+       ОСНОВНАЯ АДАПТИВНАЯ РАЗМЕТКА
+       ========================================================= */
 
-    <style>
-      /* Убираем стандартные логотипы Unity, зашитые в css-классах */
-      #unity-logo, #unity-webgl-logo {
-        display: none !important;
-      }
-      
-      #rotate-screen {
-        display: none;
+    html,
+    body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+
+        /*
+         * dvh лучше работает на современных мобильных браузерах,
+         * где высота viewport меняется из-за адресной строки.
+         */
+        height: 100dvh;
+
+        overflow: hidden;
+
+        background: #000;
+    }
+
+    body {
         position: fixed;
-        top: 0;
-        left: 0;
+        inset: 0;
+    }
+
+    #unity-container {
+        position: relative;
+
         width: 100vw;
         height: 100vh;
-        background: black;
+        height: 100dvh;
+
+        margin: 0;
+        padding: 0;
+
+        overflow: hidden;
+
+        background: #000;
+    }
+
+    #unity-canvas {
+        display: block;
+
+        width: 100%;
+        height: 100%;
+
+        max-width: 100%;
+        max-height: 100%;
+
+        margin: 0;
+        padding: 0;
+
+        outline: none;
+
+        /*
+         * Не даём браузеру пытаться интерпретировать
+         * касания как прокрутку/масштабирование страницы.
+         */
+        touch-action: none;
+
+        background: #000;
+    }
+
+    /*
+     * Убираем стандартные логотипы Unity.
+     */
+    #unity-logo,
+    #unity-webgl-logo {
+        display: none !important;
+    }
+
+
+    /* =========================================================
+       LOADING BAR
+       ========================================================= */
+
+    #unity-loading-bar {
+        position: absolute;
+
+        left: 50%;
+        top: 50%;
+
+        transform: translate(-50%, -50%);
+
+        z-index: 10;
+    }
+
+
+    /* =========================================================
+       UNITY FOOTER
+       ========================================================= */
+
+    #unity-footer {
+        position: absolute;
+
+        left: 0;
+        right: 0;
+        bottom: 0;
+
+        z-index: 20;
+    }
+
+
+    /* =========================================================
+       FULLSCREEN BUTTON
+       ========================================================= */
+
+    #unity-fullscreen-button {
+        cursor: pointer;
+    }
+
+
+    /* =========================================================
+       ПРЕДУПРЕЖДЕНИЯ UNITY
+       ========================================================= */
+
+    #unity-warning {
+        position: absolute;
+
+        left: 10px;
+        right: 10px;
+        top: 10px;
+
+        z-index: 100;
+    }
+
+
+    /* =========================================================
+       ЭКРАН "ПОВЕРНИТЕ ТЕЛЕФОН"
+       ========================================================= */
+
+    #rotate-screen {
+        display: none;
+
+        position: fixed;
+
+        inset: 0;
+
+        width: 100vw;
+        height: 100vh;
+        height: 100dvh;
+
+        background: #000;
+
         z-index: 9999;
+
         justify-content: center;
         align-items: center;
-      }
-    
-      #rotate-screen img {
+
+        flex-direction: column;
+
+        text-align: center;
+    }
+
+    #rotate-screen img {
         width: 50%;
         max-width: 300px;
-      }
-    </style>
+        height: auto;
+    }
 
-    <script>
-      function checkOrientation() {
-        let rotateScreen = document.getElementById("rotate-screen");
-        if (window.innerHeight > window.innerWidth) {
-          rotateScreen.style.display = "flex";
-        } else {
-          rotateScreen.style.display = "none";
+
+    /* =========================================================
+       МОБИЛЬНАЯ ВЕРСИЯ
+       ========================================================= */
+
+    .unity-mobile {
+        width: 100vw !important;
+        height: 100vh !important;
+        height: 100dvh !important;
+    }
+
+
+    /* =========================================================
+       PORTRAIT
+       Если игра рассчитана только на landscape,
+       показываем экран с просьбой повернуть устройство.
+       ========================================================= */
+
+    @media (orientation: portrait) {
+        #rotate-screen {
+            display: flex;
         }
-      }
+    }
 
-      window.addEventListener("resize", checkOrientation);
-      window.addEventListener("orientationchange", checkOrientation);
-      document.addEventListener("DOMContentLoaded", checkOrientation);
-    </script>
 
-    <script>
-      var container = document.querySelector("#unity-container");
-      var canvas = document.querySelector("#unity-canvas");
-      var loadingBar = document.querySelector("#unity-loading-bar");
-      var progressBarFull = document.querySelector("#unity-progress-bar-full");
-      var fullscreenButton = document.querySelector("#unity-fullscreen-button");
-      var warningBanner = document.querySelector("#unity-warning");
+    /* =========================================================
+       LANDSCAPE
+       ========================================================= */
 
-      function unityShowBanner(msg, type) {
+    @media (orientation: landscape) {
+        #rotate-screen {
+            display: none;
+        }
+    }
+
+
+    /* =========================================================
+       НЕБОЛЬШИЕ ЭКРАНЫ
+       ========================================================= */
+
+    @media (max-width: 600px) {
+
+        #unity-footer {
+            /*
+             * На телефоне футер не должен занимать
+             * слишком много места.
+             */
+            transform: scale(0.9);
+            transform-origin: bottom center;
+        }
+    }
+
+
+    /* =========================================================
+       ПОЛНОЭКРАННЫЙ РЕЖИМ
+       ========================================================= */
+
+    :fullscreen {
+        width: 100%;
+        height: 100%;
+    }
+
+    :-webkit-full-screen {
+        width: 100%;
+        height: 100%;
+    }
+</style>
+```
+
+</head>
+
+<body>
+
+```
+<!-- =========================================================
+     UNITY
+     ========================================================= -->
+
+<div id="unity-container" class="unity-desktop">
+
+    <canvas
+        id="unity-canvas"
+        width="960"
+        height="600"
+        tabindex="-1">
+    </canvas>
+
+    <div id="unity-loading-bar">
+
+        <div id="unity-progress-bar-empty">
+            <div id="unity-progress-bar-full"></div>
+        </div>
+
+    </div>
+
+    <div id="unity-warning"></div>
+
+    <div id="unity-footer">
+
+        <div id="unity-fullscreen-button"></div>
+
+        <div id="unity-build-title">
+            Hopscotch with Hands - DuoBrainy.app
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- =========================================================
+     SCREEN "ROTATE DEVICE"
+     ========================================================= -->
+
+<div id="rotate-screen">
+
+    <img
+        src="Restart.png"
+        alt="Поверните устройство">
+
+</div>
+
+
+<script>
+
+    /* =========================================================
+       ПОЛУЧАЕМ ELEMENTS
+       ========================================================= */
+
+    var container = document.querySelector("#unity-container");
+    var canvas = document.querySelector("#unity-canvas");
+
+    var loadingBar = document.querySelector("#unity-loading-bar");
+    var progressBarFull =
+        document.querySelector("#unity-progress-bar-full");
+
+    var fullscreenButton =
+        document.querySelector("#unity-fullscreen-button");
+
+    var warningBanner =
+        document.querySelector("#unity-warning");
+
+
+    /* =========================================================
+       UNITY WARNING
+       ========================================================= */
+
+    function unityShowBanner(msg, type) {
+
         function updateBannerVisibility() {
-          warningBanner.style.display = warningBanner.children.length ? 'block' : 'none';
+
+            warningBanner.style.display =
+                warningBanner.children.length
+                    ? "block"
+                    : "none";
         }
-        var div = document.createElement('div');
+
+        var div = document.createElement("div");
+
         div.innerHTML = msg;
+
         warningBanner.appendChild(div);
-        if (type == 'error') div.style = 'background: red; padding: 10px;';
-        else {
-          if (type == 'warning') div.style = 'background: yellow; padding: 10px;';
-          setTimeout(function() {
-            warningBanner.removeChild(div);
-            updateBannerVisibility();
-          }, 5000);
+
+        if (type === "error") {
+
+            div.style =
+                "background: red; padding: 10px;";
+
+        } else {
+
+            if (type === "warning") {
+
+                div.style =
+                    "background: yellow; padding: 10px;";
+            }
+
+            setTimeout(function () {
+
+                if (div.parentNode === warningBanner) {
+
+                    warningBanner.removeChild(div);
+
+                }
+
+                updateBannerVisibility();
+
+            }, 5000);
         }
+
         updateBannerVisibility();
-      }
+    }
 
-      var buildUrl = "Build";
-      var loaderUrl = buildUrl + "/Hopscotch_WebGL.loader.js";
-      var config = {
-        dataUrl: buildUrl + "/Hopscotch_WebGL.data",
-        frameworkUrl: buildUrl + "/Hopscotch_WebGL.framework.js",
-        codeUrl: buildUrl + "/Hopscotch_WebGL.wasm",
-        streamingAssetsUrl: "StreamingAssets",
-        companyName: "ZNOVANNA",
-        // 3. Внутреннее название продукта для движка Unity
-        productName: "Hopscotch with Hands - DuoBrainy.app",
-        productVersion: "1.0.2",
-        showBanner: unityShowBanner,
-      };
 
-      if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
-        var meta = document.createElement('meta');
-        meta.name = 'viewport';
-        meta.content = 'width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, shrink-to-fit=yes';
+    /* =========================================================
+       UNITY BUILD
+       ========================================================= */
+
+    var buildUrl = "Build";
+
+    var loaderUrl =
+        buildUrl + "/Hopscotch_WebGL.loader.js";
+
+    var config = {
+
+        dataUrl:
+            buildUrl + "/Hopscotch_WebGL.data",
+
+        frameworkUrl:
+            buildUrl + "/Hopscotch_WebGL.framework.js",
+
+        codeUrl:
+            buildUrl + "/Hopscotch_WebGL.wasm",
+
+        streamingAssetsUrl:
+            "StreamingAssets",
+
+        companyName:
+            "ZNOVANNA",
+
+        productName:
+            "Hopscotch with Hands - DuoBrainy.app",
+
+        productVersion:
+            "1.0.2",
+
+        showBanner:
+            unityShowBanner
+    };
+
+
+    /* =========================================================
+       MOBILE DETECTION
+       ========================================================= */
+
+    var isMobile =
+        /iPhone|iPad|iPod|Android/i.test(
+            navigator.userAgent
+        );
+
+
+    /* =========================================================
+       VIEWPORT
+       ========================================================= */
+
+    if (isMobile) {
+
+        var meta =
+            document.createElement("meta");
+
+        meta.name = "viewport";
+
+        meta.content =
+            "width=device-width, " +
+            "height=device-height, " +
+            "initial-scale=1.0, " +
+            "maximum-scale=1.0, " +
+            "minimum-scale=1.0, " +
+            "user-scalable=no, " +
+            "viewport-fit=cover";
+
         document.head.appendChild(meta);
-        
+
+
+        /*
+         * ВАЖНО:
+         * add(), а не className = ...
+         *
+         * Не уничтожаем существующие CSS-классы Unity.
+         */
         container.classList.add("unity-mobile");
         canvas.classList.add("unity-mobile");
-      } else {
-        canvas.style.width = "960px";
-        canvas.style.height = "600px";
-      }
 
-      canvas.style.background = "url('" + buildUrl + "/Hopscotch_WebGL.jpg') center / cover";
-      loadingBar.style.display = "block";
+    } else {
 
-      var script = document.createElement("script");
-      script.src = loaderUrl;
-      script.onload = () => {
-        createUnityInstance(canvas, config, (progress) => {
-          progressBarFull.style.width = 100 * progress + "%";
-        }).then((unityInstance) => {
-          loadingBar.style.display = "none";
-          fullscreenButton.onclick = () => {
-            unityInstance.SetFullscreen(1);
-          };
-        }).catch((message) => {
-          alert(message);
+        /*
+         * На компьютере НЕ задаём:
+         *
+         * canvas.style.width = "960px";
+         * canvas.style.height = "600px";
+         *
+         * Вместо этого canvas занимает доступную область
+         * через CSS.
+         */
+    }
+
+
+    /* =========================================================
+       BACKGROUND
+       ========================================================= */
+
+    canvas.style.background =
+        "url('" +
+        buildUrl +
+        "/Hopscotch_WebGL.jpg') center / cover";
+
+
+    /* =========================================================
+       LOADING
+       ========================================================= */
+
+    loadingBar.style.display = "block";
+
+
+    /* =========================================================
+       FULLSCREEN
+       ========================================================= */
+
+    function requestBrowserFullscreen() {
+
+        /*
+         * ВАЖНО:
+         * Браузеры обычно разрешают настоящий fullscreen
+         * только после действия пользователя.
+         */
+
+        try {
+
+            if (document.documentElement.requestFullscreen) {
+
+                return document.documentElement
+                    .requestFullscreen()
+                    .catch(function () {});
+
+            }
+
+            if (
+                document.documentElement.webkitRequestFullscreen
+            ) {
+
+                document.documentElement
+                    .webkitRequestFullscreen();
+
+            }
+
+        } catch (e) {
+
+            console.log(
+                "Fullscreen is not available:",
+                e
+            );
+        }
+    }
+
+
+    /* =========================================================
+       LOAD UNITY
+       ========================================================= */
+
+    var script =
+        document.createElement("script");
+
+    script.src = loaderUrl;
+
+
+    script.onload = function () {
+
+        createUnityInstance(
+
+            canvas,
+
+            config,
+
+            function (progress) {
+
+                progressBarFull.style.width =
+                    (100 * progress) + "%";
+            }
+
+        ).then(function (unityInstance) {
+
+            loadingBar.style.display = "none";
+
+
+            /* =================================================
+               UNITY FULLSCREEN BUTTON
+               ================================================= */
+
+            fullscreenButton.onclick =
+                function () {
+
+                    /*
+                     * Сначала используем Unity fullscreen,
+                     * поскольку Unity WebGL умеет корректно
+                     * подстраивать canvas.
+                     */
+
+                    try {
+
+                        unityInstance.SetFullscreen(1);
+
+                    } catch (e) {
+
+                        /*
+                         * Если Unity fullscreen недоступен,
+                         * пробуем стандартный browser fullscreen.
+                         */
+
+                        requestBrowserFullscreen();
+                    }
+                };
+
+
+            /* =================================================
+               ПЕРВОЕ ПОЛЬЗОВАТЕЛЬСКОЕ КАСАНИЕ
+               ================================================= */
+
+            /*
+             * Не запускаем fullscreen автоматически при загрузке.
+             *
+             * Это запрещается многими мобильными браузерами.
+             *
+             * После первого взаимодействия пользователя
+             * можно попробовать перейти в fullscreen.
+             */
+
+            var fullscreenStarted = false;
+
+            function tryFullscreenOnce() {
+
+                if (fullscreenStarted) {
+                    return;
+                }
+
+                fullscreenStarted = true;
+
+                /*
+                 * На мобильном сначала пробуем Unity fullscreen.
+                 */
+
+                if (isMobile) {
+
+                    try {
+
+                        unityInstance.SetFullscreen(1);
+
+                    } catch (e) {
+
+                        requestBrowserFullscreen();
+                    }
+                }
+            }
+
+
+            /*
+             * touchend — мобильные устройства
+             */
+            document.addEventListener(
+                "touchend",
+                tryFullscreenOnce,
+                {
+                    once: true,
+                    passive: true
+                }
+            );
+
+
+            /*
+             * click — компьютеры/другие устройства
+             */
+            document.addEventListener(
+                "click",
+                function () {
+
+                    /*
+                     * На desktop автоматически
+                     * fullscreen НЕ включаем.
+                     */
+
+                },
+                {
+                    once: true
+                }
+            );
+
+
+        }).catch(function (message) {
+
+            console.error(
+                "Unity failed to start:",
+                message
+            );
+
+            unityShowBanner(
+                "Ошибка запуска Unity: " + message,
+                "error"
+            );
         });
-      };
+    };
 
-      document.body.appendChild(script);
-    </script>
-  </body>
+
+    script.onerror = function () {
+
+        unityShowBanner(
+            "Не удалось загрузить Unity WebGL.",
+            "error"
+        );
+    };
+
+
+    document.body.appendChild(script);
+
+
+    /* =========================================================
+       RESIZE
+       ========================================================= */
+
+    function handleResize() {
+
+        /*
+         * Сообщаем браузеру, что canvas должен занимать
+         * актуальный viewport.
+         */
+
+        container.style.width = "100vw";
+        container.style.height = "100vh";
+
+        if (window.visualViewport) {
+
+            /*
+             * visualViewport помогает на мобильных браузерах,
+             * когда адресная строка меняет доступную высоту.
+             */
+
+            var viewportHeight =
+                window.visualViewport.height;
+
+            if (viewportHeight > 0) {
+
+                container.style.height =
+                    viewportHeight + "px";
+            }
+        }
+    }
+
+
+    window.addEventListener(
+        "resize",
+        handleResize
+    );
+
+    window.addEventListener(
+        "orientationchange",
+        function () {
+
+            /*
+             * Даём браузеру время обновить viewport
+             * после поворота устройства.
+             */
+
+            setTimeout(
+                handleResize,
+                150
+            );
+        }
+    );
+
+
+    if (window.visualViewport) {
+
+        window.visualViewport.addEventListener(
+            "resize",
+            handleResize
+        );
+    }
+
+
+    document.addEventListener(
+        "DOMContentLoaded",
+        handleResize
+    );
+
+
+    /*
+     * Первоначальный запуск resize.
+     */
+    handleResize();
+
+</script>
+```
+
+</body>
 </html>
