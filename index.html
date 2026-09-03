@@ -3,12 +3,11 @@
   <head>
     <meta charset="utf-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <!-- 1. Название на вкладке браузера -->
     <title>Hopscotch with Hands - DuoBrainy.app</title>
     <link rel="shortcut icon" href="TemplateData/favicon.ico">
     <link rel="stylesheet" href="TemplateData/style.css">
     
-    <!-- Безопасная заглушка для предотвращения ошибок вызова Telegram SDK изнутри WebAssembly -->
+    <!-- Безопасная заглушка для Telegram SDK -->
     <script>
       window.Telegram = window.Telegram || {};
       window.Telegram.WebApp = window.Telegram.WebApp || {
@@ -32,7 +31,6 @@
       <div id="unity-warning"> </div>
       <div id="unity-footer">
         <div id="unity-fullscreen-button"></div>
-        <!-- 2. Название на веб-странице рядом с кнопкой фуллскрина -->
         <div id="unity-build-title">Hopscotch with Hands - DuoBrainy.app</div>
       </div>
     </div>
@@ -42,8 +40,37 @@
     </div>
 
     <style>
-      /* Убираем стандартные логотипы Unity, зашитые в css-классах */
+      /* Убираем стандартные логотипы Unity */
       #unity-logo, #unity-webgl-logo {
+        display: none !important;
+      }
+
+      /* Перекрываем розовые поля подложки темным фоном */
+      html, body {
+        background: #1a1a1a !important;
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+      }
+      
+      /* Адаптация под полный экран на мобильных */
+      .unity-mobile#unity-container {
+        width: 100vw !important;
+        height: 100vh !important;
+        position: fixed !important;
+        top: 0;
+        left: 0;
+      }
+
+      .unity-mobile#unity-canvas {
+        width: 100% !important;
+        height: 100% !important;
+      }
+
+      /* Скрываем футер Unity на смартфонах, чтобы не занимал место */
+      .unity-mobile #unity-footer {
         display: none !important;
       }
       
@@ -115,7 +142,6 @@
         codeUrl: buildUrl + "/Hopscotch_WebGL.wasm",
         streamingAssetsUrl: "StreamingAssets",
         companyName: "ZNOVANNA",
-        // 3. Внутреннее название продукта для движка Unity
         productName: "Hopscotch with Hands - DuoBrainy.app",
         productVersion: "1.0.2",
         showBanner: unityShowBanner,
