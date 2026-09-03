@@ -7,19 +7,6 @@
     <title>Hopscotch with Hands - DuoBrainy.app</title>
     <link rel="shortcut icon" href="TemplateData/favicon.ico">
     <link rel="stylesheet" href="TemplateData/style.css">
-    
-    <!-- Безопасная заглушка для предотвращения ошибок вызова Telegram SDK изнутри WebAssembly -->
-    <script>
-      window.Telegram = window.Telegram || {};
-      window.Telegram.WebApp = window.Telegram.WebApp || {
-        ready: function() {},
-        requestFullscreen: function() {
-          console.log("Запрос Fullscreen перехвачен заглушкой браузера.");
-        },
-        isVersionAtLeast: function() { return false; },
-        version: "0"
-      };
-    </script>
   </head>
   <body>
     <div id="unity-container" class="unity-desktop">
