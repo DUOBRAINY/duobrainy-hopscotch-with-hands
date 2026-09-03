@@ -3,12 +3,13 @@
   <head>
     <meta charset="utf-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <!-- 1. Название на вкладке браузера -->
+    <!-- Оптимизированный viewport для мобильных устройств -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, shrink-to-fit=yes">
     <title>Hopscotch with Hands - DuoBrainy.app</title>
     <link rel="shortcut icon" href="TemplateData/favicon.ico">
     <link rel="stylesheet" href="TemplateData/style.css">
     
-    <!-- Заглушка для предотвращения ошибок вызова Telegram SDK изнутри WebAssembly -->
+    <!-- Заглушка Telegram SDK -->
     <script>
       window.Telegram = {
         WebApp: {
@@ -33,7 +34,6 @@
       <div id="unity-warning"> </div>
       <div id="unity-footer">
         <div id="unity-fullscreen-button"></div>
-        <!-- 2. Название на веб-странице рядом с кнопкой фуллскрина -->
         <div id="unity-build-title">Hopscotch with Hands - DuoBrainy.app</div>
       </div>
     </div>
@@ -43,7 +43,6 @@
     </div>
 
     <style>
-      /* Убираем стандартные логотипы Unity, зашитые в css-классах */
       #unity-logo, #unity-webgl-logo {
         display: none !important;
       }
@@ -115,17 +114,21 @@
         codeUrl: buildUrl + "/Hopscotch_WebGL.wasm",
         streamingAssetsUrl: "StreamingAssets",
         companyName: "ZNOVANNA",
-        // 3. Внутреннее название продукта для движка Unity
         productName: "Hopscotch with Hands - DuoBrainy.app",
         productVersion: "1.0.2",
         showBanner: unityShowBanner,
+        devicePixelRatio: Math.min(window.devicePixelRatio || 1, 1.5),
+        powerPreference: "high-performance",
+        webglContextAttributes: {
+          preserveDrawingBuffer: false,
+          powerPreference: "high-performance",
+          failIfMajorPerformanceCaveat: false
+        }
       };
 
-      if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
-        var meta = document.createElement('meta');
-        meta.name = 'viewport';
-        meta.content = 'width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, shrink-to-fit=yes';
-        document.getElementsByTagName('head').appendChild(meta);
+      var isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+      if (isMobile) {
         container.className = "unity-mobile";
         canvas.className = "unity-mobile";
       } else {
@@ -147,7 +150,8 @@
             unityInstance.SetFullscreen(1);
           };
         }).catch((message) => {
-          alert(message);
+          console.error(message);
+          alert("Ошибка загрузки игры: " + message);
         });
       };
 
