@@ -3,11 +3,12 @@
   <head>
     <meta charset="utf-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <!-- 1. Название на вкладке браузера -->
     <title>Hopscotch with Hands - DuoBrainy.app</title>
     <link rel="shortcut icon" href="TemplateData/favicon.ico">
     <link rel="stylesheet" href="TemplateData/style.css">
     
-    <!-- Безопасная заглушка для Telegram SDK (оставлена, чтобы ничего не ломалось) -->
+    <!-- Безопасная заглушка для предотвращения ошибок вызова Telegram SDK изнутри WebAssembly -->
     <script>
       window.Telegram = window.Telegram || {};
       window.Telegram.WebApp = window.Telegram.WebApp || {
@@ -31,16 +32,54 @@
       <div id="unity-warning"> </div>
       <div id="unity-footer">
         <div id="unity-fullscreen-button"></div>
+        <!-- 2. Название на веб-странице рядом с кнопкой фуллскрина -->
         <div id="unity-build-title">Hopscotch with Hands - DuoBrainy.app</div>
       </div>
     </div>
 
+    <div id="rotate-screen">
+      <img src="Restart.png" alt="Поверните устройство">
+    </div>
+
     <style>
-      /* Убираем стандартные логотипы Unity */
+      /* Убираем стандартные логотипы Unity, зашитые в css-классах */
       #unity-logo, #unity-webgl-logo {
         display: none !important;
       }
+      
+      #rotate-screen {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: black;
+        z-index: 9999;
+        justify-content: center;
+        align-items: center;
+      }
+    
+      #rotate-screen img {
+        width: 50%;
+        max-width: 300px;
+      }
     </style>
+
+    <script>
+      function checkOrientation() {
+        let rotateScreen = document.getElementById("rotate-screen");
+        if (window.innerHeight > window.innerWidth) {
+          rotateScreen.style.display = "flex";
+        } else {
+          rotateScreen.style.display = "none";
+        }
+      }
+
+      window.addEventListener("resize", checkOrientation);
+      window.addEventListener("orientationchange", checkOrientation);
+      document.addEventListener("DOMContentLoaded", checkOrientation);
+    </script>
 
     <script>
       var container = document.querySelector("#unity-container");
@@ -76,6 +115,7 @@
         codeUrl: buildUrl + "/Hopscotch_WebGL.wasm",
         streamingAssetsUrl: "StreamingAssets",
         companyName: "ZNOVANNA",
+        // 3. Внутреннее название продукта для движка Unity
         productName: "Hopscotch with Hands - DuoBrainy.app",
         productVersion: "1.0.2",
         showBanner: unityShowBanner,
